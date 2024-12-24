@@ -2,10 +2,6 @@ from flask import Flask, render_template, request
 import re
 import math
 import os
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 app = Flask(__name__)
 
@@ -73,8 +69,7 @@ def get_question_sets(mcqs, questions_per_set=70):
 @app.route('/')
 def index():
     try:
-        questions_file = os.path.join(os.path.dirname(__file__), 'EVS Questions.txt')
-        all_mcqs = parse_mcqs(questions_file)
+        all_mcqs = parse_mcqs('EVS Questions.txt')
         question_sets = get_question_sets(all_mcqs)
         
         # Get the requested set number from query parameters
@@ -101,7 +96,6 @@ def index():
     except Exception as e:
         return f"Error loading questions: {str(e)}", 500
 
-# For local development
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     app.run(host='0.0.0.0', port=port)
