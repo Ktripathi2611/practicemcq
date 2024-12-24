@@ -2,7 +2,7 @@
 :root {
   --primary-color: #4a90e2;
   --secondary-color: #2c3e50;
-  --background-color: #f5f6fa;
+  --background-color: #484f6e;
   --text-color: #2c3e50;
   --border-color: #dcdde1;
   --hover-color: #3498db;
@@ -12,9 +12,9 @@
 
 [data-theme="dark"] {
   --primary-color: #3498db;
-  --secondary-color: #ecf0f1;
+  --secondary-color: #39575e;
   --background-color: #2c3e50;
-  --text-color: #ecf0f1;
+  --text-color: #000000;
   --border-color: #34495e;
   --hover-color: #2980b9;
 }
@@ -90,7 +90,7 @@ body {
   align-items: center;
   margin-bottom: 2rem;
   padding: 1rem;
-  background: white;
+  background: rgb(202, 192, 192);
   border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
@@ -125,7 +125,7 @@ body {
 
 /* Status Panel */
 .status-panel {
-  background: white;
+  background: rgb(147, 140, 140);
   padding: 1rem;
   border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
@@ -174,7 +174,7 @@ body {
 
 /* Question Section */
 .question-section {
-  background: white;
+  background: rgba(141, 127, 77, 0.988);
   padding: 2rem;
   border-radius: 10px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
