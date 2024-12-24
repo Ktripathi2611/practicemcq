@@ -27,8 +27,8 @@ An interactive Multiple Choice Questions (MCQ) quiz application built with Flask
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/mcqs.git
-cd mcqs
+git clone https://github.com/Ktripathi2611/practicemcq.git
+cd practicemcq
 ```
 
 2. Install required packages
