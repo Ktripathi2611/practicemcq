@@ -1,0 +1,17 @@
+Question: What is the capital of France?
+Options:
+A) London
+B) Berlin
+C) Paris
+D) Madrid
+Answer: C
+Marks: 2
+
+Question: Which planet is known as the Red Planet?
+Options:
+A) Venus
+B) Mars
+C) Jupiter
+D) Saturn
+Answer: B
+Marks: 1

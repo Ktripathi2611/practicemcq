@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCQ Quiz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    {% if not selected_set %}
+    <!-- Landing Page -->
+    <div class="landing-page">
+        <div class="welcome-section">
+            <h1>Welcome to MCQ Quiz</h1>
+            <p>Select a question set to begin</p>
+        </div>
+        
+        <div class="set-selector">
+            {% for set in question_sets %}
+            <a href="/?set={{ loop.index }}" class="set-card">
+                <div class="set-info">
+                    <h3>Set {{ loop.index }}</h3>
+                    <p>Questions {{ set.start_num }} - {{ set.end_num }}</p>
+                    <p>{{ set.total_questions }} Questions</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <!-- Quiz Interface -->
+    <div class="quiz-container">
+        <div class="quiz-header">
+            <div class="quiz-title">
+                <h2>Set {{ current_set }} of {{ total_sets }}</h2>
+                <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Sets</a>
+            </div>
+            <button id="theme-toggle" onclick="toggleTheme()">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+        
+        <div class="quiz-content">
+            <div class="status-panel">
+                <div class="status-header">
+                    <h3>Questions</h3>
+                    <div class="legend">
+                        <span class="current">Current</span>
+                        <span class="answered">Answered</span>
+                        <span class="unanswered">Unanswered</span>
+                    </div>
+                </div>
+                <div class="question-status">
+                    {% for q in mcqs %}
+                    <button class="status-btn" data-question="{{ loop.index0 }}">{{ loop.index }}</button>
+                    {% endfor %}
+                </div>
+            </div>
+            
+            <div class="question-section">
+                {% for q in mcqs %}
+                <div class="question" id="q{{ loop.index0 }}" {% if not loop.first %}style="display: none;"{% endif %}>
+                    <p class="question-text">{{ q.question }}</p>
+                    <div class="options" data-question-id="{{ loop.index0 }}">
+                        {% for option in q.options %}
+                        <label class="option" data-correct="{{ 'true' if loop.index0 == q.answer|int - 1 else 'false' }}">
+                            <input type="radio" name="question{{ loop.index0 }}" value="{{ loop.index0 }}" {% if loop.index0 == q.answer|int - 1 %}data-correct="true"{% endif %}>
+                            <div class="option-content">
+                                <span class="option-letter">{{ ['A', 'B', 'C', 'D'][loop.index0] }}</span>
+                                {{ option }}
+                            </div>
+                            <div class="feedback-icon">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                    <div class="answer-feedback" style="display: none;">
+                        <div class="correct-msg">
+                            <i class="fas fa-check-circle"></i> Correct!
+                        </div>
+                        <div class="incorrect-msg">
+                            <i class="fas fa-times-circle"></i> Incorrect
+                            <div class="correct-answer">
+                                <i class="fas fa-check"></i> Correct answer: <span></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                <div class="navigation">
+                    <button onclick="prevQuestion()" class="nav-btn" id="prev-btn" disabled>Previous</button>
+                    <button onclick="nextQuestion()" class="nav-btn" id="next-btn">Next</button>
+                    <button onclick="submitQuiz()" class="submit-btn" id="submit-btn">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Score Modal -->
+    <div id="scoreModal" class="modal">
+        <div class="modal-content">
+            <h2>Quiz Results</h2>
+            <p>Your score: <span id="score"></span></p>
+            <button onclick="window.location.href='/'" class="restart-btn">Try Another Set</button>
+        </div>
+    </div>
+
+    <script>
+        let currentQuestion = 0;
+        let totalQuestions = {{ mcqs|length if mcqs else 0 }};
+        let answers = {};
+        
+        function updateNavButtons() {
+            document.getElementById('prev-btn').disabled = currentQuestion === 0;
+            document.getElementById('next-btn').disabled = currentQuestion === totalQuestions - 1;
+            document.getElementById('submit-btn').style.display = 
+                currentQuestion === totalQuestions - 1 ? 'block' : 'none';
+            
+            document.querySelectorAll('.status-btn').forEach((btn, index) => {
+                btn.classList.toggle('current', index === currentQuestion);
+            });
+        }
+        
+        function showQuestion(index) {
+            document.querySelectorAll('.question').forEach((q, i) => {
+                q.style.display = i === index ? 'block' : 'none';
+            });
+            currentQuestion = index;
+            updateNavButtons();
+        }
+        
+        function prevQuestion() {
+            if (currentQuestion > 0) {
+                showQuestion(currentQuestion - 1);
+            }
+        }
+        
+        function nextQuestion() {
+            if (currentQuestion < totalQuestions - 1) {
+                showQuestion(currentQuestion + 1);
+            }
+        }
+        
+        function submitQuiz() {
+            let score = 0;
+            Object.keys(answers).forEach((questionId, index) => {
+                const question = document.getElementById(`q${questionId}`);
+                const correctOption = question.querySelector('label[data-correct="true"]');
+                if (correctOption && correctOption.querySelector('input').value === answers[questionId]) {
+                    score++;
+                }
+            });
+            document.getElementById('score').textContent = `${score}/${totalQuestions}`;
+            document.getElementById('scoreModal').style.display = 'block';
+        }
+        
+        // Initialize
+        updateNavButtons();
+        
+        // Add click handlers for status buttons
+        document.querySelectorAll('.status-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                showQuestion(parseInt(btn.dataset.question));
+            });
+        });
+        
+        // Add change handlers for radio buttons
+        document.querySelectorAll('.options').forEach(optionsContainer => {
+            const radios = optionsContainer.querySelectorAll('input[type="radio"]');
+            
+            radios.forEach(radio => {
+                radio.addEventListener('change', () => {
+                    if (optionsContainer.classList.contains('answered')) {
+                        return; // Prevent changing answer if already answered
+                    }
+                    
+                    const questionId = radio.name.replace('question', '');
+                    const options = optionsContainer.querySelectorAll('.option');
+                    const selectedOption = radio.closest('.option');
+                    const isCorrect = radio.dataset.correct === 'true';
+                    
+                    // Mark question as answered
+                    optionsContainer.classList.add('answered');
+                    
+                    // Update the selected option
+                    if (isCorrect) {
+                        selectedOption.classList.add('correct');
+                    } else {
+                        selectedOption.classList.add('incorrect');
+                        // Show the correct answer only if wrong answer was selected
+                        options.forEach(opt => {
+                            if (opt.querySelector('input[data-correct="true"]')) {
+                                opt.classList.add('show-correct');
+                            }
+                        });
+                    }
+                    
+                    // Disable all options in this question
+                    options.forEach(opt => {
+                        opt.classList.add('disabled');
+                        opt.querySelector('input[type="radio"]').disabled = true;
+                    });
+                    
+                    // Store the answer
+                    answers[questionId] = radio.value;
+                    
+                    // Update status button
+                    document.querySelectorAll('.status-btn')[parseInt(questionId)].classList.add('answered');
+                });
+            });
+        });
+        
+        // Theme toggle
+        function toggleTheme() {
+            document.body.setAttribute('data-theme',
+                document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+            );
+            const icon = document.querySelector('#theme-toggle i');
+            icon.classList.toggle('fa-moon');
+            icon.classList.toggle('fa-sun');
+        }
+        
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            if (event.target.className === 'modal') {
+                event.target.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
