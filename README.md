@@ -72,22 +72,11 @@ http://localhost:5000
 
 ## 📱 Deployment
 
-### Heroku Deployment
-
-1. Install Heroku CLI and login
-```bash
-heroku login
-```
-
-2. Create a new Heroku app
-```bash
-heroku create your-app-name
-```
-
-3. Deploy the application
-```bash
-git push heroku main
-```
+The application can be deployed on any platform that supports Python web applications, such as:
+- PythonAnywhere
+- DigitalOcean
+- AWS
+- Google Cloud Platform
 
 ### Other Platforms
 
