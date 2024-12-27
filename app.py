@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import json
 import os
 import re
 from datetime import datetime, timedelta
+import random
+import time
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-here'
@@ -46,6 +48,9 @@ def parse_mcqs(file_path):
             continue
     
     return mcqs
+
+def load_questions():
+    return parse_mcqs('EVS Questions.txt')
 
 class UserProgress:
     def __init__(self):
@@ -113,7 +118,7 @@ class UserProgress:
 
 @app.route('/')
 def index():
-    mcqs = parse_mcqs('EVS Questions.txt')
+    mcqs = load_questions()
     total_questions = len(mcqs)
     questions_per_set = QUESTIONS_PER_SET
     total_sets = (total_questions + questions_per_set - 1) // questions_per_set
@@ -143,7 +148,7 @@ def index():
             
             # Mark bookmarked questions
             for q in set_questions:
-                q['bookmarked'] = str(q['number']) in session.get('user_progress', UserProgress()).bookmarks
+                q['bookmarked'] = str(q.get('number', '')) in session.get('user_progress', UserProgress()).bookmarks
             
             return render_template('index.html',
                                 mcqs=set_questions,
@@ -167,7 +172,7 @@ def submit_answer():
     question_index = data.get('question_index')  # Get the actual question index
     
     # Get the correct answer for this question
-    questions = parse_mcqs('EVS Questions.txt')
+    questions = load_questions()
     if question_id >= len(questions):
         return jsonify({"error": "Invalid question ID"}), 400
     
@@ -213,7 +218,7 @@ def bookmark_question():
 
 @app.route('/bookmarks')
 def get_bookmarks():
-    mcqs = parse_mcqs('EVS Questions.txt')
+    mcqs = load_questions()
     bookmarks = session.get('bookmarks', [])
     bookmarked_questions = [q for q in mcqs if q['number'] in bookmarks]
     return jsonify({
@@ -230,7 +235,7 @@ def stats():
 @app.route('/review')
 def review():
     progress = session.get('user_progress', UserProgress())
-    mcqs = parse_mcqs('EVS Questions.txt')
+    mcqs = load_questions()
     
     # Get bookmarked questions
     bookmarked_questions = [
@@ -278,6 +283,22 @@ def get_time_remaining():
         'time_remaining': f'{minutes}:{seconds:02d}',
         'expired': False
     })
+
+@app.route('/start-quiz', methods=['POST'])
+def start_quiz():
+    mode = request.form.get('mode', 'quiz')
+    session['quiz_mode'] = mode
+    session['current_question'] = 0
+    session['score'] = 0
+    session['start_time'] = time.time()
+    
+    if mode == 'practice':
+        session['time_limit'] = None  # No time limit in practice mode
+    else:
+        session['time_limit'] = 5400  # 90 minutes in seconds
+    
+    # Redirect to the first question
+    return redirect(url_for('index', set=1))
 
 if __name__ == '__main__':
     app.run(debug=True)

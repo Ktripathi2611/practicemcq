@@ -24,7 +24,7 @@
                 <div class="update-item">
                     <span class="new-badge">New</span>
                     <h3>Timer Feature</h3>
-                    <p>2-minute timer for each question</p>
+                    <p>1hr 30min timer for each set</p>
                 </div>
                 <div class="update-item">
                     <h3>Bookmark Questions</h3>
@@ -42,6 +42,9 @@
         <div class="set-selector">
             {% for set in question_sets %}
             <a href="/?set={{ loop.index }}" class="set-card">
+                {% if loop.first %}
+                <div class="set-badge">New</div>
+                {% endif %}
                 <div class="set-info">
                     <h3>Set {{ loop.index }}</h3>
                     <p>Questions {{ set.start_num }} - {{ set.end_num }}</p>
@@ -57,6 +60,10 @@
         <div class="quiz-header">
             <div class="quiz-title">
                 <h2>Set {{ current_set }} of {{ total_sets }}</h2>
+                <div class="timer-container" id="quiz-timer" style="display: none;">
+                    <i class="fas fa-clock"></i>
+                    <span id="total-time">1:30:00</span>
+                </div>
                 <a href="/" class="back-btn"><i class="fas fa-arrow-left"></i> Back to Sets</a>
             </div>
             <button id="theme-toggle" onclick="toggleTheme()">
@@ -83,56 +90,53 @@
             
             <div class="question-section">
                 {% for q in mcqs %}
-                <div class="question" id="q{{ loop.index0 }}" {% if not loop.first %}style="display: none;"{% endif %}>
+                <div class="question" id="q{{ loop.index0 }}" style="display: {% if loop.first %}block{% else %}none{% endif %};">
                     <div class="question-header">
                         <div class="question-info">
-                            <span class="question-number">Question <span id="current-question">{{ loop.index }}</span></span>
-                            <div class="question-timer">
-                                <i class="fas fa-clock"></i>
-                                <span class="timer" id="timer">2:00</span>
-                            </div>
+                            <h3 class="question-title">Question {{ loop.index }}</h3>
                         </div>
-                        <div class="bookmark-container">
-                            <button class="bookmark-btn" onclick="toggleBookmark(currentQuestion)">
-                                <i class="fas fa-bookmark"></i>
-                                <span class="bookmark-tooltip">Bookmark this question</span>
+                        <button class="bookmark-btn" data-question="{{ loop.index0 }}" onclick="toggleBookmark('{{ loop.index0 }}')">
+                            <i class="fas fa-bookmark"></i>
+                        </button>
+                    </div>
+
+                    <div class="question-content">
+                        <div class="question-text">{{ q.question }}</div>
+                        <div class="options-grid">
+                            {% set outer_loop = loop %}
+                            {% for option in q.options %}
+                            <label class="option-card" data-correct="{{ 'true' if loop.index0 == q.answer|int - 1 else 'false' }}">
+                                <input type="radio" name="question_{{ outer_loop.index0 }}" value="{{ loop.index0 }}"
+                                       data-correct="{{ 'true' if loop.index0 == q.answer|int - 1 else 'false' }}">
+                                <div class="option-content">
+                                    <div class="radio-circle"></div>
+                                    <div class="option-letter">{{ ['A', 'B', 'C', 'D'][loop.index0] }}</div>
+                                    <div class="option-text">{{ option }}</div>
+                                </div>
+                                <div class="feedback-icon">
+                                    <i class="fas fa-check correct-icon"></i>
+                                    <i class="fas fa-times incorrect-icon"></i>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="question-footer">
+                        <div class="nav-buttons">
+                            <button id="prev-btn" onclick="prevQuestion()" class="nav-btn">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            <button id="next-btn" onclick="nextQuestion()" class="nav-btn">
+                                Next <i class="fas fa-chevron-right"></i>
                             </button>
                         </div>
-                    </div>
-                    <p class="question-text">{{ q.question }}</p>
-                    <div class="options" data-question-id="{{ loop.index0 }}">
-                        {% for option in q.options %}
-                        <label class="option" data-correct="{{ 'true' if loop.index0 == q.answer|int - 1 else 'false' }}">
-                            <input type="radio" name="question{{ loop.index0 }}" value="{{ loop.index0 }}" {% if loop.index0 == q.answer|int - 1 %}data-correct="true"{% endif %}>
-                            <div class="option-content">
-                                <span class="option-letter">{{ ['A', 'B', 'C', 'D'][loop.index0] }}</span>
-                                {{ option }}
-                            </div>
-                            <div class="feedback-icon">
-                                <i class="fas fa-check"></i>
-                            </div>
-                        </label>
-                        {% endfor %}
-                    </div>
-                    <div class="answer-feedback" style="display: none;">
-                        <div class="correct-msg">
-                            <i class="fas fa-check-circle"></i> Correct!
-                        </div>
-                        <div class="incorrect-msg">
-                            <i class="fas fa-times-circle"></i> Incorrect
-                            <div class="correct-answer">
-                                <i class="fas fa-check"></i> Correct answer: <span></span>
-                            </div>
-                        </div>
+                        <button id="submit-btn" onclick="submitQuiz()" class="submit-btn" style="display: none;">
+                            Submit Quiz
+                        </button>
                     </div>
                 </div>
                 {% endfor %}
-                
-                <div class="navigation">
-                    <button onclick="prevQuestion()" class="nav-btn" id="prev-btn" disabled>Previous</button>
-                    <button onclick="nextQuestion()" class="nav-btn" id="next-btn">Next</button>
-                    <button onclick="submitQuiz()" class="submit-btn" id="submit-btn">Submit</button>
-                </div>
             </div>
         </div>
     </div>
@@ -143,6 +147,8 @@
         <div class="modal-content">
             <h2>Quiz Results</h2>
             <p>Your score: <span id="score"></span></p>
+            <p>Time taken: <span id="time-taken"></span></p>
+            <p>Questions attempted: <span id="questions-attempted"></span></p>
             <button onclick="window.location.href='/'" class="restart-btn">Try Another Set</button>
         </div>
     </div>
@@ -151,85 +157,69 @@
         let currentQuestion = 0;
         const totalQuestions = {{ mcqs|length }};
         let answers = {};
-        let timers = {};  // Add this line to initialize timers object
-        
-        function updateNavButtons() {
-            document.getElementById('prev-btn').disabled = currentQuestion === 0;
-            document.getElementById('next-btn').disabled = currentQuestion === totalQuestions - 1;
-            document.getElementById('submit-btn').style.display = 
-                currentQuestion === totalQuestions - 1 ? 'block' : 'none';
-            
-            document.querySelectorAll('.status-btn').forEach((btn, index) => {
-                btn.classList.toggle('current', index === currentQuestion);
-            });
-        }
-        
-        function startTimer(questionId) {
-            // Reset previous timer if exists
-            if (timers[questionId]) {
-                clearInterval(timers[questionId]);
+        let totalTimeInSeconds = 5400; // 1.5 hours = 90 minutes = 5400 seconds
+        let totalTimer;
+        let quizStarted = false;
+
+        function startQuiz() {
+            if (!quizStarted) {
+                quizStarted = true;
+                document.getElementById('quiz-timer').style.display = 'flex';
+                startTotalTimer();
             }
+        }
 
-            // Start new timer on the server
-            fetch('/start_timer', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question_id: questionId })
-            });
-
-            // Update timer display every second
-            timers[questionId] = setInterval(() => {
-                updateTimer(questionId);
+        function startTotalTimer() {
+            updateTotalTimerDisplay(); // Show initial time
+            totalTimer = setInterval(() => {
+                totalTimeInSeconds--;
+                if (totalTimeInSeconds <= 0) {
+                    clearInterval(totalTimer);
+                    submitQuiz(); // Auto-submit when time is up
+                }
+                updateTotalTimerDisplay();
             }, 1000);
         }
 
-        function updateTimer(questionId) {
-            fetch('/get_time_remaining', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ question_id: questionId })
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('timer').textContent = data.time_remaining;
-                
-                if (data.expired) {
-                    clearInterval(timers[questionId]);
-                    // Auto-submit the question when time expires
-                    submitAnswer();
-                }
-            });
+        function updateTotalTimerDisplay() {
+            const hours = Math.floor(totalTimeInSeconds / 3600);
+            const minutes = Math.floor((totalTimeInSeconds % 3600) / 60);
+            const seconds = totalTimeInSeconds % 60;
+            document.getElementById('total-time').textContent = 
+                `${hours.toString().padStart(1, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Add warning class when less than 5 minutes remaining
+            if (totalTimeInSeconds <= 300) {
+                document.getElementById('total-time').classList.add('time-warning');
+            }
         }
 
         function showQuestion(index) {
-            // Stop previous timer if exists
-            if (currentQuestion !== null && timers[currentQuestion]) {
-                clearInterval(timers[currentQuestion]);
-            }
-            
-            // Hide all questions and show the selected one
-            document.querySelectorAll('.question').forEach((q, i) => {
-                q.style.display = i === index ? 'block' : 'none';
+            // Hide all questions
+            document.querySelectorAll('.question').forEach(q => {
+                q.style.display = 'none';
             });
+            
+            // Show selected question
+            document.getElementById(`q${index}`).style.display = 'block';
             
             // Update current question
             currentQuestion = index;
-            document.getElementById('current-question').textContent = index + 1;
+            
+            // Update navigation buttons
+            updateNavButtons();
             
             // Update status buttons
             document.querySelectorAll('.status-btn').forEach((btn, i) => {
                 btn.classList.toggle('current', i === index);
             });
-            
-            // Start new timer
-            startTimer(index);
-            
-            // Update navigation buttons
-            updateNavButtons();
+        }
+
+        function updateNavButtons() {
+            document.getElementById('prev-btn').disabled = currentQuestion === 0;
+            document.getElementById('next-btn').disabled = currentQuestion === totalQuestions - 1;
+            document.getElementById('submit-btn').style.display = 
+                currentQuestion === totalQuestions - 1 ? 'block' : 'none';
         }
 
         function prevQuestion() {
@@ -245,105 +235,127 @@
         }
 
         function submitQuiz() {
+            clearInterval(totalTimer); // Stop the timer
             let score = 0;
-            Object.keys(answers).forEach((questionId, index) => {
-                const question = document.getElementById(`q${questionId}`);
-                const correctOption = question.querySelector('label[data-correct="true"]');
-                if (correctOption && correctOption.querySelector('input').value === answers[questionId]) {
+            let totalAnswered = 0;
+            
+            // Calculate score
+            Object.keys(answers).forEach(questionId => {
+                const question = document.querySelector(`input[name="question_${questionId}"][data-correct="true"]`);
+                if (question && question.value === answers[questionId]) {
                     score++;
                 }
+                totalAnswered++;
             });
+
+            // Show results
             document.getElementById('score').textContent = `${score}/${totalQuestions}`;
+            document.getElementById('time-taken').textContent = formatTimeTaken(5400 - totalTimeInSeconds);
+            document.getElementById('questions-attempted').textContent = `${totalAnswered}/${totalQuestions}`;
             document.getElementById('scoreModal').style.display = 'block';
         }
 
+        function formatTimeTaken(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const remainingSeconds = seconds % 60;
+            return `${hours}h ${minutes}m ${remainingSeconds}s`;
+        }
+
         // Bookmark functionality
-        document.querySelectorAll('.bookmark-btn').forEach(btn => {
-            btn.addEventListener('click', async () => {
-                const questionIndex = btn.dataset.question;
-                const isBookmarked = bookmarks.has(questionIndex);
-                
-                if (isBookmarked) {
-                    bookmarks.delete(questionIndex);
-                    btn.classList.remove('active');
-                    btn.querySelector('.bookmark-tooltip').textContent = 'Bookmark this question';
-                } else {
-                    bookmarks.add(questionIndex);
-                    btn.classList.add('active');
-                    btn.querySelector('.bookmark-tooltip').textContent = 'Bookmarked';
-                }
-                
-                // Update status button bookmark indicator
-                const statusBtn = document.querySelector(`.status-btn[data-question="${questionIndex}"]`);
-                statusBtn.classList.toggle('bookmarked', !isBookmarked);
-                
-                try {
-                    await fetch('/bookmark', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            question_id: parseInt(questionIndex),
-                            bookmarked: !isBookmarked
-                        })
-                    });
-                } catch (error) {
-                    console.error('Error saving bookmark:', error);
-                }
-            });
+        let bookmarkedQuestions = new Set();
+
+        function toggleBookmark(questionId) {
+            const button = document.querySelector(`.bookmark-btn[data-question="${questionId}"]`);
+            const statusBtn = document.querySelector(`.status-btn[data-question="${questionId}"]`);
+            const questionDiv = document.getElementById(`q${questionId}`);
+            
+            if (bookmarkedQuestions.has(questionId)) {
+                bookmarkedQuestions.delete(questionId);
+                button.classList.remove('bookmarked');
+                statusBtn.classList.remove('bookmarked');
+                questionDiv.classList.remove('bookmarked-question');
+            } else {
+                bookmarkedQuestions.add(questionId);
+                button.classList.add('bookmarked');
+                statusBtn.classList.add('bookmarked');
+                questionDiv.classList.add('bookmarked-question');
+            }
+
+            // Save bookmarks to localStorage
+            localStorage.setItem('bookmarkedQuestions', JSON.stringify(Array.from(bookmarkedQuestions)));
+        }
+
+        // Load bookmarks from localStorage on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedBookmarks = localStorage.getItem('bookmarkedQuestions');
+            if (savedBookmarks) {
+                const bookmarks = JSON.parse(savedBookmarks);
+                bookmarks.forEach(questionId => {
+                    bookmarkedQuestions.add(questionId);
+                    const button = document.querySelector(`.bookmark-btn[data-question="${questionId}"]`);
+                    const statusBtn = document.querySelector(`.status-btn[data-question="${questionId}"]`);
+                    const questionDiv = document.getElementById(`q${questionId}`);
+                    if (button) button.classList.add('bookmarked');
+                    if (statusBtn) statusBtn.classList.add('bookmarked');
+                    if (questionDiv) questionDiv.classList.add('bookmarked-question');
+                });
+            }
         });
 
         // Add click handlers for status buttons
         document.querySelectorAll('.status-btn').forEach(btn => {
             btn.addEventListener('click', () => {
-                showQuestion(parseInt(btn.dataset.question));
+                const questionIndex = parseInt(btn.dataset.question);
+                showQuestion(questionIndex);
             });
         });
 
-        // Add change handlers for radio buttons
-        document.querySelectorAll('.options').forEach(optionsContainer => {
-            const radios = optionsContainer.querySelectorAll('input[type="radio"]');
+        function handleAnswer(radio) {
+            const optionCard = radio.closest('.option-card');
+            const optionsGrid = radio.closest('.options-grid');
+            const isCorrect = radio.dataset.correct === 'true';
+            const questionId = radio.name.replace('question_', '');
             
-            radios.forEach(radio => {
-                radio.addEventListener('change', () => {
-                    if (optionsContainer.classList.contains('answered')) {
-                        return; // Prevent changing answer if already answered
-                    }
-                    
-                    const questionId = radio.name.replace('question', '');
-                    const options = optionsContainer.querySelectorAll('.option');
-                    const selectedOption = radio.closest('.option');
-                    const isCorrect = radio.dataset.correct === 'true';
-                    
-                    // Mark question as answered
-                    optionsContainer.classList.add('answered');
-                    
-                    // Update the selected option
-                    if (isCorrect) {
-                        selectedOption.classList.add('correct');
-                    } else {
-                        selectedOption.classList.add('incorrect');
-                        // Show the correct answer only if wrong answer was selected
-                        options.forEach(opt => {
-                            if (opt.querySelector('input[data-correct="true"]')) {
-                                opt.classList.add('show-correct');
-                            }
-                        });
-                    }
-                    
-                    // Disable all options in this question
-                    options.forEach(opt => {
-                        opt.classList.add('disabled');
-                        opt.querySelector('input[type="radio"]').disabled = true;
-                    });
-                    
-                    // Store the answer
-                    answers[questionId] = radio.value;
-                    
-                    // Update status button
-                    document.querySelectorAll('.status-btn')[parseInt(questionId)].classList.add('answered');
-                });
+            // Disable all options in this question
+            optionsGrid.querySelectorAll('.option-card').forEach(card => {
+                card.classList.add('disabled');
+                const input = card.querySelector('input[type="radio"]');
+                input.disabled = true;
+                
+                // Show feedback for selected answer
+                if (card === optionCard) {
+                    card.classList.add(isCorrect ? 'correct' : 'incorrect');
+                    const feedbackIcon = card.querySelector('.feedback-icon');
+                    feedbackIcon.style.display = 'block';
+                }
+                // Show correct answer if wrong answer was selected
+                else if (card.dataset.correct === 'true' && !isCorrect) {
+                    card.classList.add('show-correct');
+                    const feedbackIcon = card.querySelector('.feedback-icon');
+                    feedbackIcon.style.display = 'block';
+                }
+            });
+
+            // Store answer
+            answers[questionId] = radio.value;
+
+            // Update question status
+            const statusBtn = document.querySelector(`.status-btn[data-question="${questionId}"]`);
+            if (statusBtn) {
+                statusBtn.classList.add('answered');
+                statusBtn.classList.toggle('correct-answer', isCorrect);
+                statusBtn.classList.toggle('wrong-answer', !isCorrect);
+            }
+        }
+
+        // Update radio button event listeners
+        document.querySelectorAll('input[type="radio"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (!quizStarted) {
+                    startQuiz();
+                }
+                handleAnswer(this);
             });
         });
 
