@@ -323,17 +323,11 @@
                 const input = card.querySelector('input[type="radio"]');
                 input.disabled = true;
                 
-                // Show feedback for selected answer
+                // Only show feedback for selected answer and correct answer if wrong
                 if (card === optionCard) {
                     card.classList.add(isCorrect ? 'correct' : 'incorrect');
-                    const feedbackIcon = card.querySelector('.feedback-icon');
-                    feedbackIcon.style.display = 'block';
-                }
-                // Show correct answer if wrong answer was selected
-                else if (card.dataset.correct === 'true' && !isCorrect) {
+                } else if (card.dataset.correct === 'true' && !isCorrect) {
                     card.classList.add('show-correct');
-                    const feedbackIcon = card.querySelector('.feedback-icon');
-                    feedbackIcon.style.display = 'block';
                 }
             });
 
