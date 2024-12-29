@@ -1,105 +1,90 @@
-# Interactive MCQ Quiz Application
+# MCQ Quiz Application
 
-An interactive Multiple Choice Questions (MCQ) quiz application built with Flask, featuring immediate feedback and a modern user interface.
+A Flask-based web application for conducting multiple-choice questions (MCQ) quizzes with a focus on Environmental Science (EVS) questions.
 
-## 🌟 Features
+## Features
 
-- **Immediate Feedback**: Get instant feedback on your answers
-- **Visual Indicators**: 
-  - ✅ Green checkmark for correct answers
-  - ❌ Red X for incorrect answers
-  - Automatic display of correct answer when wrong choice is selected
-- **User-Friendly Navigation**:
-  - Previous/Next buttons
-  - Question status tracking
-  - Easy-to-use interface
-- **Responsive Design**: Works on both desktop and mobile devices
-- **Score Tracking**: Keep track of your performance
+- **Dynamic Question Sets**: Questions are divided into sets of 70 questions each
+- **Interactive Quiz Interface**: Clean and user-friendly interface for attempting questions
+- **Bookmarking System**: Users can bookmark questions for later review
+- **Progress Tracking**: Tracks user progress including:
+  - Total questions attempted
+  - Correct/incorrect answers
+  - Accuracy percentage
+  - Time taken per question
+  - Set-wise statistics
+- **Timer Functionality**: Built-in timer for quiz sessions
+- **Review Mode**: Ability to review attempted questions and bookmarked questions
 
-## 🚀 Getting Started
+## Project Structure
 
-### Prerequisites
-
-- Python 3.8 or higher
-- pip (Python package installer)
-
-### Installation
-
-1. Clone the repository
-```bash
-git clone https://github.com/Ktripathi2611/practicemcq.git
-cd practicemcq
+```
+mcqs/
+├── app.py              # Main application file with Flask routes and logic
+├── EVS Questions.txt   # Source file containing MCQ questions
+├── requirements.txt    # Python dependencies
+├── static/            # Static files (CSS, JS)
+├── templates/         # HTML templates
+│   ├── index.html    # Main quiz interface
+│   └── updates.html  # Updates page
+└── wsgi.py           # WSGI entry point
 ```
 
-2. Install required packages
+## Technical Implementation
+
+### Backend (app.py)
+- Built with Flask framework
+- Implements question parsing from text file
+- Manages user sessions and progress tracking
+- Handles quiz logic and scoring
+- Provides RESTful endpoints for quiz functionality
+
+### Question Processing
+- Questions are parsed from a text file using regex patterns
+- Each question contains:
+  - Question text
+  - Four options (A-D)
+  - Correct answer
+  - Question number
+
+### User Progress Tracking
+- Tracks individual user progress using session management
+- Stores:
+  - Answered questions
+  - Bookmarked questions
+  - Time spent per question
+  - Set-wise statistics
+
+### Frontend
+- Responsive web interface
+- Real-time question navigation
+- Progress indicators
+- Timer display
+- Statistical summaries
+
+## Setup and Running
+
+1. Install the required dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-### Running the Application
-
-1. Start the Flask server
+2. Run the application:
 ```bash
 python app.py
 ```
 
-2. Open your browser and navigate to
-```
-http://localhost:5000
-```
+3. Access the application at `http://localhost:5000`
 
-## 📖 Usage
+## Dependencies
 
-1. **Taking the Quiz**:
-   - Read each question carefully
-   - Select one answer from the options provided
-   - Get immediate feedback on your selection
-   - Navigate through questions using Previous/Next buttons
+- Flask
+- Python 3.x
+- Additional requirements listed in requirements.txt
 
-2. **Understanding Feedback**:
-   - Green background: Correct answer
-   - Red background: Incorrect answer
-   - When wrong answer selected: The correct answer is highlighted
+## Deployment
 
-## 🛠️ Technical Details
-
-- **Frontend**: HTML5, CSS3, JavaScript
-- **Backend**: Flask (Python)
-- **Dependencies**: 
-  - Flask 3.0.0
-  - Werkzeug 3.0.1
-  - Gunicorn 21.2.0 (for production)
-
-## 📱 Deployment
-
-The application can be deployed on any platform that supports Python web applications, such as:
-- PythonAnywhere
-- DigitalOcean
-- AWS
-- Google Cloud Platform
-
-### Other Platforms
-
-The application can be deployed to any platform that supports Python web applications:
-- PythonAnywhere
-- DigitalOcean
-- AWS
-- Google Cloud Platform
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🙏 Acknowledgments
-
-- Flask framework community
-- Contributors and testers
-- Everyone who provided feedback and suggestions
+The application is configured for deployment on Vercel with the following files:
+- `vercel.json`: Vercel deployment configuration
+- `Procfile`: Process file for web server
+- `wsgi.py`: WSGI application entry point
