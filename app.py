@@ -50,7 +50,7 @@ def parse_mcqs(file_path):
     return mcqs
 
 def load_questions():
-    return parse_mcqs('EVS Questions.txt')
+    return parse_mcqs('question.txt')
 
 class UserProgress:
     def __init__(self):
